@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>ThingSpeak Veri Çekme</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }
+        .data-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 300px; }
+        h3 { margin-top: 0; color: #333; }
+        .value { font-size: 24px; font-weight: bold; color: #0275d8; }
+        .time { font-size: 12px; color: #777; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="data-card">
+        <h3>Sıcaklık Değeri (Field 1)</h3>
+        <div id="veri-kutusu" class="value">Yükleniyor...</div>
+        <div id="zaman-kutusu" class="time"></div>
+    </div>
+
+    <script>
+        // Kendi bilgilerinize göre doldurun
+        const channelId = "3047398"; 
+        const readApiKey = "0YNSMCTFZF3IICX2"; // Kanalınız gizli (private) ise gereklidir
+        
+        // ThingSpeak son veriyi getiren API URL'si
+        const url = `https://thingspeak.com{channelId}/fields/1/last.json?api_key=${readApiKey}`;
+
+        function veriCek() {
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Ağ hatası oluştu.");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Gelen JSON verisini ayrıştırıp HTML içerisine yazıyoruz
+                    if(data.field1 !== null) {
+                        document.getElementById("veri-kutusu").innerText = data.field1 + " °C";
+                        
+                        // Zaman damgasını yerel saate çevirme
+                        const tarih = new Date(data.created_at).toLocaleString("tr-TR");
+                        document.getElementById("zaman-kutusu").innerText = "Son Güncelleme: " + tarih;
+                    } else {
+                        document.getElementById("veri-kutusu").innerText = "Veri yok";
+                    }
+                })
+                .catch(error => {
+                    console.error("Hata:", error);
+                    document.getElementById("veri-kutusu").innerText = "Hata!";
+                });
+        }
+
+        // Sayfa açıldığında ilk veriyi çek
+        veriCek();
+
+        // Her 15 saniyede bir veriyi otomatik güncelle (ThingSpeak ücretsiz hesap sınırı)
+        setInterval(veriCek, 15000);
+    </script>
+
+</body>
+</html>
