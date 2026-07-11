@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-                    <!-- LED 1,2,3 OK Role Ters -->
+  <!-- LED 1,2,3 OK Başarılı oluncaya kadar istek gönder -->
     <meta charset="UTF-8">
     <title>ThingSpeak LED Kontrolü</title>
     <style>
@@ -116,7 +116,7 @@
         }
         
         .led-button:disabled {
-            opacity: 0.7;
+            opacity: 0.5;
             cursor: not-allowed;
         }
         
@@ -217,14 +217,14 @@
         ];
         
         let ledStates = { 1: 0, 2: 0, 3: 0 };
+        let isRequesting = false; // ✅ İstek kontrolü
+        let lastRequestTime = 0; // ✅ Son istek zamanı
 
         function getLedClass(value) {
-            // ✅ TERS: 0 = Açık (YEŞİL), 1 = Kapalı (KIRMIZI)
             return (value == 0 || value == "0") ? "led-on" : "led-off";
         }
 
         function getLedLabel(value) {
-            // ✅ TERS: 0 = Açık, 1 = Kapalı
             return (value == 0 || value == "0") ? "💡 AÇIK" : "⚫ KAPALI";
         }
 
@@ -238,7 +238,6 @@
                 if (response.ok) {
                     const data = await response.json();
                     
-                    // Her field'i güncelle
                     for (let i = 1; i <= 3; i++) {
                         const durum = String(data[`field${i}`] || "0").trim();
                         ledStates[i] = durum;
@@ -246,7 +245,6 @@
                         const statusClass = getLedClass(durum);
                         const label = getLedLabel(durum);
                         
-                        // ✅ Butonda 0 veya 1 yaz
                         document.getElementById(`led${i}-btn`).innerText = durum;
                         document.getElementById(`led${i}-btn`).className = `led-button ${statusClass}`;
                         document.getElementById(`led${i}-label`).innerText = label;
@@ -262,26 +260,37 @@
             document.getElementById("refresh-status").innerText = "Güncellendi: " + new Date().toLocaleTimeString("tr-TR");
         }
 
-        // LED'i aç/kapat
+        // LED'i aç/kapat (✅ Rate limit kontrolü ile)
         async function toggleLed(fieldNum) {
+            // ✅ İstek devam ediyor mu kontrol et
+            if (isRequesting) {
+                alert("Lütfen işlem tamamlanana kadar bekleyin...");
+                return;
+            }
+            
+            // ✅ Rate limit: 15 saniye bekle
+            const now = Date.now();
+            if (now - lastRequestTime < 15000) {
+                alert("Çok hızlı! Lütfen 15 saniye sonra tekrar deneyin.");
+                return;
+            }
+            
             const btn = document.getElementById(`led${fieldNum}-btn`);
             const loading = document.getElementById(`led${fieldNum}-loading`);
             
-            // ✅ TERS: Durumu ters çevir
             const newState = ledStates[fieldNum] == 0 || ledStates[fieldNum] == "0" ? 1 : 0;
             
-            // Mevcut durumları kopyala
             let field1 = ledStates[1];
             let field2 = ledStates[2];
             let field3 = ledStates[3];
             
-            // Tıklanan field'i güncelle
             if (fieldNum === 1) field1 = newState;
             if (fieldNum === 2) field2 = newState;
             if (fieldNum === 3) field3 = newState;
             
             loading.innerText = "Gönderiliyor...";
             btn.disabled = true;
+            isRequesting = true; // ✅ İstek başladı
             
             try {
                 const response = await fetch('https://api.thingspeak.com/update', {
@@ -297,17 +306,20 @@
                 
                 if (result > 0) {
                     loading.innerText = "✓ Başarılı";
+                    lastRequestTime = Date.now(); // ✅ Zamanı kaydet
                     
                     setTimeout(() => {
                         veriCek();
                         loading.innerText = "";
                         btn.disabled = false;
-                    }, 1500);
+                        isRequesting = false; // ✅ İstek bitti
+                    }, 2000);
                 } else {
                     loading.innerText = "✗ Hata!";
                     setTimeout(() => {
                         loading.innerText = "";
                         btn.disabled = false;
+                        isRequesting = false;
                     }, 2000);
                 }
             } catch (error) {
@@ -316,12 +328,13 @@
                 setTimeout(() => {
                     loading.innerText = "";
                     btn.disabled = false;
+                    isRequesting = false;
                 }, 2000);
             }
         }
 
         veriCek();
-        setInterval(veriCek, 10000);
+        setInterval(veriCek, 30000); // ✅ 30 saniye de bir güncelle
     </script>
 
 </body>
