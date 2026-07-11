@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#172554">
-    <title>ThingSpeak LED Kontrolü7 Manus AI Gerisayım</title>
+    <title>ThingSpeak LED Kontrolü8 Manus AI Gerisayım2</title>
     <style>
         :root {
             color-scheme: light;
@@ -687,12 +687,16 @@
             }
 
             const durationSeconds = getDurationSeconds(led);
+            
+            // Mevcut zamanlayıcıyı her durumda durdur ve sıfırla
             stopTimer(led);
             
             const nextState = isOn(led.state) ? "1" : "0";
             const success = await applyStateChange(led, nextState);
 
-            if (success && durationSeconds > 0) {
+            // Eğer yeni durum "Açık" ise (isOn(nextState)) ve süre girilmişse zamanlayıcıyı başlat
+            // Eğer yeni durum "Kapalı" ise zamanlayıcı zaten yukarıda stopTimer ile durduruldu
+            if (success && isOn(nextState) && durationSeconds > 0) {
                 startTimer(led, durationSeconds);
             }
         }
