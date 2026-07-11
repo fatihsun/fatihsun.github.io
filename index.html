@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+                    <!-- LED 1,2,3 OK Role Ters -->
     <meta charset="UTF-8">
     <title>ThingSpeak LED Kontrolü</title>
     <style>
@@ -69,19 +70,19 @@
             align-items: center;
             justify-content: center;
             font-size: 56px;
+            font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             color: white;
-            font-weight: bold;
             position: relative;
             overflow: hidden;
         }
         
-        /* LED AÇIK (0 = Açık/Yanıyor) */
+        /* LED AÇIK (0 = Açık/Yanıyor) - YEŞİL */
         .led-on {
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            box-shadow: 0 0 40px rgba(76, 175, 80, 0.8);
         }
         
         .led-on::after {
@@ -95,10 +96,10 @@
             animation: pulse 2s infinite;
         }
         
-        /* LED KAPAL (1 = Kapalı/Söndü) */
+        /* LED KAPAL (1 = Kapalı/Söndü) - KIRMIZI */
         .led-off {
-            background: linear-gradient(135deg, #666666 0%, #333333 100%);
-            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+            box-shadow: 0 0 15px rgba(244, 67, 54, 0.6);
         }
         
         @keyframes pulse {
@@ -174,7 +175,7 @@
             <div class="led-card">
                 <h3>LED 1</h3>
                 <div class="led-label" id="led1-label">-</div>
-                <button class="led-button led-off" id="led1-btn" onclick="toggleLed(1)"></button>
+                <button class="led-button led-off" id="led1-btn" onclick="toggleLed(1)">-</button>
                 <div id="led1-time" class="led-time">-</div>
                 <div id="led1-loading" class="led-loading"></div>
             </div>
@@ -183,7 +184,7 @@
             <div class="led-card">
                 <h3>LED 2</h3>
                 <div class="led-label" id="led2-label">-</div>
-                <button class="led-button led-off" id="led2-btn" onclick="toggleLed(2)"></button>
+                <button class="led-button led-off" id="led2-btn" onclick="toggleLed(2)">-</button>
                 <div id="led2-time" class="led-time">-</div>
                 <div id="led2-loading" class="led-loading"></div>
             </div>
@@ -192,7 +193,7 @@
             <div class="led-card">
                 <h3>LED 3</h3>
                 <div class="led-label" id="led3-label">-</div>
-                <button class="led-button led-off" id="led3-btn" onclick="toggleLed(3)"></button>
+                <button class="led-button led-off" id="led3-btn" onclick="toggleLed(3)">-</button>
                 <div id="led3-time" class="led-time">-</div>
                 <div id="led3-loading" class="led-loading"></div>
             </div>
@@ -218,13 +219,13 @@
         let ledStates = { 1: 0, 2: 0, 3: 0 };
 
         function getLedClass(value) {
-            // ✅ TERS: 0 = Açık (Sarı), 1 = Kapalı (Gri)
+            // ✅ TERS: 0 = Açık (YEŞİL), 1 = Kapalı (KIRMIZI)
             return (value == 0 || value == "0") ? "led-on" : "led-off";
         }
 
         function getLedLabel(value) {
             // ✅ TERS: 0 = Açık, 1 = Kapalı
-            return (value == 0 || value == "0") ? "💡 AÇIK" : "⚫ KAPAL";
+            return (value == 0 || value == "0") ? "💡 AÇIK" : "⚫ KAPALI";
         }
 
         // Tüm LED'lerin son durumunu bir çağrıda oku
@@ -245,6 +246,8 @@
                         const statusClass = getLedClass(durum);
                         const label = getLedLabel(durum);
                         
+                        // ✅ Butonda 0 veya 1 yaz
+                        document.getElementById(`led${i}-btn`).innerText = durum;
                         document.getElementById(`led${i}-btn`).className = `led-button ${statusClass}`;
                         document.getElementById(`led${i}-label`).innerText = label;
                         
