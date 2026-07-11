@@ -191,35 +191,41 @@
             return (value == 1 || value == "1") ? "led-on" : "led-off";
         }
 
-        // LED durumunu oku
+        // JSONP callback fonksiyonları
+        window.handleLed1 = function(data) { handleLedData(1, data); };
+        window.handleLed2 = function(data) { handleLedData(2, data); };
+        window.handleLed3 = function(data) { handleLedData(3, data); };
+
+        function handleLedData(fieldNum, data) {
+            if (data && data.field1) {
+                const durum = String(data.field1).trim();
+                ledStates[fieldNum] = durum;
+                
+                const statusClass = getLedClass(durum);
+                
+                document.getElementById(`led${fieldNum}-btn`).innerText = durum;
+                document.getElementById(`led${fieldNum}-btn`).className = `led-button ${statusClass}`;
+                
+                const tarih = new Date(data.created_at).toLocaleString("tr-TR");
+                document.getElementById(`led${fieldNum}-time`).innerText = tarih;
+            }
+        }
+
+        // LED durumunu oku (JSONP kullanarak)
         function veriCek() {
             fields.forEach(field => {
-                const url = `https://thingspeak.com/channels/${channelId}/fields/${field.num}/last.csv?api_key=${readApiKey}`;
+                const callbackName = `handleLed${field.num}`;
+                const url = `https://api.thingspeak.com/channels/${channelId}/fields/${field.num}/last.json?api_key=${readApiKey}&callback=${callbackName}`;
                 
-                fetch(url, { mode: 'no-cors' })
-                    .then(response => response.text())
-                    .then(data => {
-                        const satırlar = data.trim().split('\n');
-                        if (satırlar.length > 1) {
-                            const değerler = satırlar[1].split(',');
-                            const zaman = değerler[0].replace(/"/g, '');
-                            const durum = değerler[1].replace(/"/g, '');
-                            
-                            if (durum !== null && durum !== undefined) {
-                                ledStates[field.num] = durum;
-                                
-                                const statusClass = getLedClass(durum);
-                                
-                                // ✅ Butonda 0 veya 1 göster
-                                document.getElementById(`${field.id}-btn`).innerText = durum;
-                                document.getElementById(`${field.id}-btn`).className = `led-button ${statusClass}`;
-                                
-                                const tarih = new Date(zaman).toLocaleString("tr-TR");
-                                document.getElementById(`${field.id}-time`).innerText = tarih;
-                            }
-                        }
-                    })
-                    .catch(error => console.error(`LED ${field.num} hatası:`, error));
+                const script = document.createElement('script');
+                script.src = url;
+                script.async = true;
+                document.head.appendChild(script);
+                
+                // Script'i temizle
+                setTimeout(() => {
+                    document.head.removeChild(script);
+                }, 2000);
             });
             
             document.getElementById("refresh-status").innerText = "Güncellendi: " + new Date().toLocaleTimeString("tr-TR");
@@ -237,7 +243,6 @@
             btn.disabled = true;
             
             try {
-                // ThingSpeak API'ye veri gönder
                 const response = await fetch('https://api.thingspeak.com/update', {
                     method: 'POST',
                     headers: {
@@ -252,7 +257,6 @@
                 if (result > 0) {
                     loading.innerText = "✓ Başarılı";
                     
-                    // Durum güncelle
                     setTimeout(() => {
                         veriCek();
                         loading.innerText = "";
