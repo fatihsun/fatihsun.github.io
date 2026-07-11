@@ -3,529 +3,732 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ThingSpeak LED Kontrolü1 Gerisayım</title>
+    <meta name="theme-color" content="#172554">
+    <title>ThingSpeak LED Kontrolü</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
+        :root {
+            color-scheme: light;
+            --page-start: #172554;
+            --page-end: #4338ca;
+            --surface: rgba(255, 255, 255, 0.96);
+            --card: #f8fafc;
+            --text: #172033;
+            --muted: #64748b;
+            --line: #dbe4f0;
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --info: #2563eb;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow: 0 24px 70px rgba(15, 23, 42, 0.32);
+            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        *,
+        *::before,
+        *::after {
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            margin: 0;
+            padding: clamp(12px, 3vw, 32px);
+            display: grid;
+            place-items: center;
+            font-family: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 15% 15%, rgba(129, 140, 248, 0.42), transparent 30%),
+                linear-gradient(145deg, var(--page-start), var(--page-end));
         }
-        
-        .container {
-            background: white;
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 900px;
-            width: 100%;
+
+        button,
+        input {
+            font: inherit;
         }
-        
+
+        .app-shell {
+            width: min(100%, 1040px);
+            overflow: hidden;
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(16px);
+        }
+
+        .app-header {
+            padding: clamp(24px, 5vw, 44px) clamp(18px, 5vw, 48px) 20px;
+        }
+
+        .eyebrow {
+            margin: 0 0 8px;
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
         h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 40px;
-            font-size: 32px;
+            margin: 0;
+            font-size: clamp(1.75rem, 5vw, 2.75rem);
+            line-height: 1.08;
+            letter-spacing: -0.04em;
         }
-        
+
+        .intro {
+            max-width: 650px;
+            margin: 12px 0 0;
+            color: var(--muted);
+            font-size: clamp(0.92rem, 2.2vw, 1rem);
+            line-height: 1.6;
+        }
+
         .led-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 30px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: clamp(14px, 2.4vw, 24px);
+            padding: 12px clamp(16px, 4vw, 48px) clamp(24px, 5vw, 48px);
         }
-        
+
         .led-card {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 30px;
-            text-align: center;
-            border: 2px solid #e9ecef;
-        }
-        
-        .led-card h3 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-        
-        .led-controls {
+            min-width: 0;
+            padding: clamp(18px, 3vw, 26px);
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-md);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+        }
+
+        .card-heading {
+            width: 100%;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             gap: 10px;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 15px;
         }
-        
-        .led-button {
-            width: 120px;
-            height: 120px;
-            border-radius: 16px;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 56px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            color: white;
+
+        .card-heading h2 {
+            margin: 0;
+            font-size: 1.12rem;
         }
-        
-        .led-on {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            box-shadow: 0 0 40px rgba(76, 175, 80, 0.8);
+
+        .state-pill {
+            padding: 5px 9px;
+            color: var(--muted);
+            background: #e2e8f0;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 800;
         }
-        
-        .led-off {
-            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
-            box-shadow: 0 0 15px rgba(244, 67, 54, 0.6);
+
+        .state-pill.is-on {
+            color: #166534;
+            background: #dcfce7;
         }
-        
-        .led-button:hover:not(:disabled) {
-            transform: scale(1.08);
+
+        .time-fieldset {
+            width: 100%;
+            margin: 0 0 18px;
+            padding: 0;
+            border: 0;
         }
-        
-        .led-button:active:not(:disabled) {
-            transform: scale(0.95);
-        }
-        
-        .led-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .time-input-group {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 15px;
-            font-size: 12px;
-        }
-        
-        .time-input-group input {
-            width: 80px;
-            padding: 6px;
-            border: 2px solid #667eea;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        
-        .time-input-group label {
-            color: #333;
-            font-weight: bold;
-        }
-        
-        .led-label {
-            font-size: 14px;
-            font-weight: bold;
-            color: #333;
+
+        .time-fieldset legend {
             margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 700;
         }
-        
-        .led-time {
-            font-size: 12px;
-            color: #999;
-            margin-top: 10px;
+
+        .time-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 7px;
         }
-        
-        .led-loading {
-            font-size: 12px;
-            color: #667eea;
-            margin-top: 8px;
-            font-weight: bold;
-            height: 16px;
+
+        .time-input {
+            min-width: 0;
         }
-        
-        .led-timer {
-            font-size: 14px;
-            color: white;
-            background: #2196F3;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-top: 8px;
-            font-weight: bold;
-            display: none;
-        }
-        
-        .led-timer.show {
+
+        .time-input label {
             display: block;
-        }
-        
-        .led-warning {
-            font-size: 12px;
-            color: white;
-            background: #ff9800;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-top: 8px;
-            font-weight: bold;
-            display: none;
-        }
-        
-        .led-warning.show {
-            display: block;
-        }
-        
-        .led-countdown {
-            font-size: 11px;
-            color: white;
-            background: #f44336;
-            padding: 6px 10px;
-            border-radius: 6px;
-            margin-top: 6px;
-            font-weight: bold;
-            display: none;
-        }
-        
-        .led-countdown.show {
-            display: block;
-        }
-        
-        .footer {
+            margin-bottom: 5px;
+            color: var(--muted);
+            font-size: 0.68rem;
+            font-weight: 700;
             text-align: center;
-            padding-top: 30px;
-            border-top: 1px solid #e9ecef;
-            color: #999;
-            font-size: 14px;
         }
-        
-        .status-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
+
+        .time-input input {
+            width: 100%;
+            min-height: 42px;
+            padding: 8px 4px;
+            color: var(--text);
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-weight: 800;
+            text-align: center;
+            outline: none;
+            transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+        }
+
+        .time-input input:focus-visible {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.16);
+        }
+
+        .led-button {
+            width: clamp(104px, 28vw, 126px);
+            aspect-ratio: 1;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            border: 0;
+            border-radius: 28px;
+            cursor: pointer;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.22);
+            transition: transform 160ms var(--ease-out), box-shadow 220ms var(--ease-out), opacity 160ms var(--ease-out);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .led-button::before {
+            content: "";
+            width: 42%;
+            aspect-ratio: 1;
+            border: 8px solid currentColor;
+            border-top-color: transparent;
             border-radius: 50%;
-            background: #4CAF50;
-            animation: blink 2s infinite;
-            margin-right: 5px;
+            filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.18));
         }
-        
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+        .led-button::after {
+            content: "";
+            position: absolute;
+            width: 8px;
+            height: 36%;
+            top: 27%;
+            left: calc(50% - 4px);
+            background: currentColor;
+            border-radius: 999px;
+        }
+
+        .led-button {
+            position: relative;
+        }
+
+        .led-button.is-on {
+            background: linear-gradient(145deg, #22c55e, #15803d);
+            box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.12), 0 16px 34px rgba(22, 163, 74, 0.35);
+        }
+
+        .led-button.is-off {
+            background: linear-gradient(145deg, #ef4444, #b91c1c);
+        }
+
+        .led-button:hover:not(:disabled) {
+            transform: translateY(-3px);
+        }
+
+        .led-button:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .led-button:focus-visible {
+            outline: 4px solid rgba(79, 70, 229, 0.28);
+            outline-offset: 4px;
+        }
+
+        .led-button:disabled {
+            opacity: 0.55;
+            cursor: wait;
+        }
+
+        .updated-at {
+            min-height: 18px;
+            margin: 13px 0 0;
+            color: var(--muted);
+            font-size: 0.72rem;
+            text-align: center;
+        }
+
+        .message-stack {
+            width: 100%;
+            min-height: 42px;
+            margin-top: 12px;
+            display: grid;
+            gap: 7px;
+        }
+
+        .message {
+            display: none;
+            margin: 0;
+            padding: 8px 10px;
+            color: #fff;
+            border-radius: 9px;
+            font-size: 0.75rem;
+            font-weight: 750;
+            line-height: 1.35;
+            text-align: center;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.timer { background: var(--info); }
+        .message.warning { background: var(--warning); }
+        .message.error { background: var(--danger); }
+        .message.success { color: #166534; background: #dcfce7; }
+
+        .app-footer {
+            min-height: 58px;
+            padding: 16px clamp(18px, 5vw, 48px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            color: var(--muted);
+            background: rgba(241, 245, 249, 0.76);
+            border-top: 1px solid var(--line);
+            font-size: 0.82rem;
+            text-align: center;
+        }
+
+        .status-dot {
+            flex: 0 0 auto;
+            width: 9px;
+            height: 9px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 0 5px rgba(22, 163, 74, 0.13);
+        }
+
+        .status-dot.error {
+            background: var(--danger);
+            box-shadow: 0 0 0 5px rgba(220, 38, 38, 0.13);
+        }
+
+        @media (max-width: 780px) {
+            body {
+                align-items: start;
+            }
+
+            .led-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .led-card {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                column-gap: 18px;
+                align-items: center;
+            }
+
+            .card-heading,
+            .time-fieldset,
+            .updated-at,
+            .message-stack {
+                grid-column: 1;
+            }
+
+            .led-button {
+                grid-column: 2;
+                grid-row: 1 / span 4;
+                width: clamp(96px, 27vw, 122px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0;
+                background: #eef2ff;
+            }
+
+            .app-shell {
+                min-height: 100vh;
+                border: 0;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .app-header {
+                padding-top: 28px;
+            }
+
+            .led-card {
+                grid-template-columns: 1fr;
+                padding: 18px;
+            }
+
+            .card-heading,
+            .time-fieldset,
+            .updated-at,
+            .message-stack,
+            .led-button {
+                grid-column: 1;
+            }
+
+            .led-button {
+                grid-row: auto;
+                justify-self: center;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔌 LED Kontrolü</h1>
-        
-        <div class="led-grid">
-            <div class="led-card">
-                <h3>LED 1</h3>
-                
-                <div class="time-input-group">
-                    <label>Süre (sn):</label>
-                    <input type="number" id="led1-time-input" placeholder="1800" value="1800" min="1">
-                </div>
-                
-                <div class="led-label" id="led1-label">-</div>
-                <button class="led-button led-off" id="led1-btn" onclick="toggleLed(1)">-</button>
-                <div id="led1-time" class="led-time">-</div>
-                <div id="led1-loading" class="led-loading"></div>
-                <div id="led1-timer" class="led-timer"></div>
-                <div id="led1-warning" class="led-warning"></div>
-                <div id="led1-countdown" class="led-countdown"></div>
+    <main class="app-shell">
+        <header class="app-header">
+            <p class="eyebrow">ThingSpeak Kontrol Paneli</p>
+            <h1>LED Kontrolü</h1>
+            <p class="intro">Her LED için çalışma süresini saat, dakika ve saniye olarak belirleyin. Düğmeye dokunduğunuzda durum değişir ve geri sayım başlar.</p>
+        </header>
+
+        <section id="led-grid" class="led-grid" aria-label="LED kontrolleri"></section>
+
+        <footer class="app-footer" aria-live="polite">
+            <span id="status-dot" class="status-dot" aria-hidden="true"></span>
+            <span id="refresh-status">Veriler yükleniyor...</span>
+        </footer>
+    </main>
+
+    <template id="led-card-template">
+        <article class="led-card">
+            <div class="card-heading">
+                <h2></h2>
+                <span class="state-pill">Bekleniyor</span>
             </div>
 
-            <div class="led-card">
-                <h3>LED 2</h3>
-                
-                <div class="time-input-group">
-                    <label>Süre (sn):</label>
-                    <input type="number" id="led2-time-input" placeholder="1800" value="1800" min="1">
+            <fieldset class="time-fieldset">
+                <legend>Otomatik durum değiştirme süresi</legend>
+                <div class="time-inputs">
+                    <div class="time-input">
+                        <label>Saat</label>
+                        <input class="hours-input" type="number" value="0" min="0" max="999" inputmode="numeric">
+                    </div>
+                    <div class="time-input">
+                        <label>Dakika</label>
+                        <input class="minutes-input" type="number" value="0" min="0" max="59" inputmode="numeric">
+                    </div>
+                    <div class="time-input">
+                        <label>Saniye</label>
+                        <input class="seconds-input" type="number" value="0" min="0" max="59" inputmode="numeric">
+                    </div>
                 </div>
-                
-                <div class="led-label" id="led2-label">-</div>
-                <button class="led-button led-off" id="led2-btn" onclick="toggleLed(2)">-</button>
-                <div id="led2-time" class="led-time">-</div>
-                <div id="led2-loading" class="led-loading"></div>
-                <div id="led2-timer" class="led-timer"></div>
-                <div id="led2-warning" class="led-warning"></div>
-                <div id="led2-countdown" class="led-countdown"></div>
-            </div>
+            </fieldset>
 
-            <div class="led-card">
-                <h3>LED 3</h3>
-                
-                <div class="time-input-group">
-                    <label>Süre (sn):</label>
-                    <input type="number" id="led3-time-input" placeholder="1800" value="1800" min="1">
-                </div>
-                
-                <div class="led-label" id="led3-label">-</div>
-                <button class="led-button led-off" id="led3-btn" onclick="toggleLed(3)">-</button>
-                <div id="led3-time" class="led-time">-</div>
-                <div id="led3-loading" class="led-loading"></div>
-                <div id="led3-timer" class="led-timer"></div>
-                <div id="led3-warning" class="led-warning"></div>
-                <div id="led3-countdown" class="led-countdown"></div>
-            </div>
-        </div>
+            <button class="led-button is-off" type="button" aria-pressed="false" aria-label="LED durumunu değiştir"></button>
+            <p class="updated-at">Son veri: -</p>
 
-        <div class="footer">
-            <span class="status-indicator"></span>
-            <span id="refresh-status">Yükleniyor...</span>
-        </div>
-    </div>
+            <div class="message-stack" aria-live="polite">
+                <p class="message timer"></p>
+                <p class="message feedback"></p>
+            </div>
+        </article>
+    </template>
 
     <script>
-        const channelId = "3047398";
-        const readApiKey = "0YNSMCTFZF3IICX2";
-        const writeApiKey = "V2IY1U93VOH2AKCB";
-        const RATE_LIMIT = 15000;
-        
-        let ledStates = { 1: 0, 2: 0, 3: 0 };
-        let lastRequestTime = { 1: 0, 2: 0, 3: 0 };
-        let countdownInterval = { 1: null, 2: null, 3: null };
-        let timerInterval = { 1: null, 2: null, 3: null };
-        let timerActive = { 1: false, 2: false, 3: false };
-        let timerRemaining = { 1: 0, 2: 0, 3: 0 };
-        let isProcessing = { 1: false, 2: false, 3: false };
+        "use strict";
 
-        function getLedClass(value) {
-            return (value == 0 || value == "0") ? "led-on" : "led-off";
+        const CONFIG = Object.freeze({
+            channelId: "3047398",
+            readApiKey: "0YNSMCTFZF3IICX2",
+            writeApiKey: "V2IY1U93VOH2AKCB",
+            ledCount: 3,
+            rateLimitMs: 15_000,
+            refreshIntervalMs: 30_000,
+            defaultDurationSeconds: 0
+        });
+
+        const ledData = Array.from({ length: CONFIG.ledCount }, (_, index) => ({
+            id: index + 1,
+            state: "1",
+            lastRequestAt: 0,
+            timerId: null,
+            rateLimitTimerId: null,
+            timerEndsAt: 0,
+            processing: false,
+            elements: null
+        }));
+
+        const grid = document.querySelector("#led-grid");
+        const template = document.querySelector("#led-card-template");
+        const refreshStatus = document.querySelector("#refresh-status");
+        const statusDot = document.querySelector("#status-dot");
+
+        function createLedCards() {
+            const fragment = document.createDocumentFragment();
+
+            ledData.forEach((led) => {
+                const card = template.content.firstElementChild.cloneNode(true);
+                const heading = card.querySelector("h2");
+                const button = card.querySelector(".led-button");
+                const inputs = {
+                    hours: card.querySelector(".hours-input"),
+                    minutes: card.querySelector(".minutes-input"),
+                    seconds: card.querySelector(".seconds-input")
+                };
+
+                heading.textContent = `LED ${led.id}`;
+                inputs.hours.id = `led-${led.id}-hours`;
+                inputs.minutes.id = `led-${led.id}-minutes`;
+                inputs.seconds.id = `led-${led.id}-seconds`;
+                card.querySelectorAll(".time-input label").forEach((label, index) => {
+                    label.htmlFor = [inputs.hours.id, inputs.minutes.id, inputs.seconds.id][index];
+                });
+
+                button.addEventListener("click", () => toggleLed(led.id));
+                Object.values(inputs).forEach((input) => {
+                    input.addEventListener("change", () => normalizeDurationInputs(inputs));
+                });
+
+                led.elements = {
+                    card,
+                    button,
+                    statePill: card.querySelector(".state-pill"),
+                    updatedAt: card.querySelector(".updated-at"),
+                    timer: card.querySelector(".timer"),
+                    feedback: card.querySelector(".feedback"),
+                    inputs
+                };
+
+                fragment.append(card);
+            });
+
+            grid.append(fragment);
         }
 
-        function getLedLabel(value) {
-            return (value == 0 || value == "0") ? "💡 AÇIK" : "⚫ KAPALI";
+        function normalizeDurationInputs(inputs) {
+            inputs.hours.value = clampNumber(inputs.hours.value, 0, 999);
+            inputs.minutes.value = clampNumber(inputs.minutes.value, 0, 59);
+            inputs.seconds.value = clampNumber(inputs.seconds.value, 0, 59);
         }
 
-        function formatTime(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            
-            if (hours > 0) {
-                return `${hours}s ${minutes}d ${secs}sn`;
-            } else if (minutes > 0) {
-                return `${minutes}d ${secs}sn`;
-            } else {
-                return `${secs}sn`;
+        function clampNumber(value, min, max) {
+            const number = Number.parseInt(value, 10);
+            return Math.min(Math.max(Number.isFinite(number) ? number : min, min), max);
+        }
+
+        function isOn(value) {
+            return String(value).trim() === "0";
+        }
+
+        function formatClock(totalSeconds) {
+            const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+            const hours = Math.floor(safeSeconds / 3600);
+            const minutes = Math.floor((safeSeconds % 3600) / 60);
+            const seconds = safeSeconds % 60;
+            return [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
+        }
+
+        function getDurationSeconds(led) {
+            normalizeDurationInputs(led.elements.inputs);
+            const { hours, minutes, seconds } = led.elements.inputs;
+            return (Number(hours.value) * 3600) + (Number(minutes.value) * 60) + Number(seconds.value);
+        }
+
+        function renderLed(led, createdAt) {
+            const active = isOn(led.state);
+            const { button, statePill, updatedAt } = led.elements;
+
+            button.classList.toggle("is-on", active);
+            button.classList.toggle("is-off", !active);
+            button.setAttribute("aria-pressed", String(active));
+            button.setAttribute("aria-label", `LED ${led.id} durumunu ${active ? "kapat" : "aç"}`);
+
+            statePill.textContent = active ? "Açık" : "Kapalı";
+            statePill.classList.toggle("is-on", active);
+
+            if (createdAt) {
+                updatedAt.textContent = `Son veri: ${new Date(createdAt).toLocaleString("tr-TR")}`;
             }
         }
 
-        function startTimer(fieldNum, seconds) {
-            // ✅ Önceki timer'ı temizle
-            if (timerInterval[fieldNum]) {
-                clearInterval(timerInterval[fieldNum]);
-            }
-            
-            timerRemaining[fieldNum] = seconds;
-            timerActive[fieldNum] = true;
-            const timerEl = document.getElementById(`led${fieldNum}-timer`);
-            
-            timerEl.innerText = `⏱️ ${formatTime(timerRemaining[fieldNum])}`;
-            timerEl.classList.add("show");
-            
-            timerInterval[fieldNum] = setInterval(() => {
-                timerRemaining[fieldNum]--;
-                timerEl.innerText = `⏱️ ${formatTime(timerRemaining[fieldNum])}`;
-                
-                if (timerRemaining[fieldNum] <= 0) {
-                    clearInterval(timerInterval[fieldNum]);
-                    timerActive[fieldNum] = false;
-                    timerEl.classList.remove("show");
-                    
-                    // ✅ Süre bittiğinde durumu tersine çevir
-                    const newState = ledStates[fieldNum] == 0 || ledStates[fieldNum] == "0" ? 1 : 0;
-                    applyStateChange(fieldNum, newState);
+        function setFeedback(led, text = "", type = "warning") {
+            const element = led.elements.feedback;
+            element.textContent = text;
+            element.className = `message feedback${text ? ` show ${type}` : ""}`;
+        }
+
+        function setTimerText(led, text = "") {
+            const element = led.elements.timer;
+            element.textContent = text;
+            element.classList.toggle("show", Boolean(text));
+        }
+
+        function startTimer(led, durationSeconds) {
+            stopTimer(led);
+            led.timerEndsAt = Date.now() + (durationSeconds * 1000);
+
+            const tick = () => {
+                const remainingSeconds = Math.max(0, Math.ceil((led.timerEndsAt - Date.now()) / 1000));
+                setTimerText(led, `Kalan süre: ${formatClock(remainingSeconds)}`);
+
+                if (remainingSeconds <= 0) {
+                    stopTimer(led);
+                    const nextState = isOn(led.state) ? "1" : "0";
+                    applyStateChange(led, nextState, true);
                 }
-            }, 1000);
+            };
+
+            tick();
+            led.timerId = window.setInterval(tick, 1000);
         }
 
-        function stopTimer(fieldNum) {
-            if (timerInterval[fieldNum]) {
-                clearInterval(timerInterval[fieldNum]);
+        function stopTimer(led) {
+            if (led.timerId) {
+                window.clearInterval(led.timerId);
+                led.timerId = null;
             }
-            timerActive[fieldNum] = false;
-            document.getElementById(`led${fieldNum}-timer`).classList.remove("show");
+            led.timerEndsAt = 0;
+            setTimerText(led);
         }
 
-        function showCountdown(fieldNum) {
-            const warningEl = document.getElementById(`led${fieldNum}-warning`);
-            const countdownEl = document.getElementById(`led${fieldNum}-countdown`);
-            
-            warningEl.innerText = "⏳ Çok hızlı! Lütfen bekleyin...";
-            warningEl.classList.add("show");
-            countdownEl.classList.add("show");
-            
-            let remaining = Math.ceil(RATE_LIMIT / 1000);
-            
-            if (countdownInterval[fieldNum]) {
-                clearInterval(countdownInterval[fieldNum]);
+        function showRateLimit(led, waitMs) {
+            if (led.rateLimitTimerId) {
+                window.clearInterval(led.rateLimitTimerId);
             }
-            
-            countdownEl.innerText = `${remaining}s sonra tekrar deneyebilirsin`;
-            
-            countdownInterval[fieldNum] = setInterval(() => {
-                remaining--;
-                if (remaining > 0) {
-                    countdownEl.innerText = `${remaining}s sonra tekrar deneyebilirsin`;
-                } else {
-                    clearInterval(countdownInterval[fieldNum]);
-                    warningEl.classList.remove("show");
-                    countdownEl.classList.remove("show");
-                    veriCek();
+
+            const availableAt = Date.now() + waitMs;
+            const tick = () => {
+                const remaining = Math.max(0, Math.ceil((availableAt - Date.now()) / 1000));
+
+                if (remaining <= 0) {
+                    window.clearInterval(led.rateLimitTimerId);
+                    led.rateLimitTimerId = null;
+                    setFeedback(led);
+                    return;
                 }
-            }, 1000);
+
+                setFeedback(led, `Çok hızlı işlem yapıldı. ${remaining} saniye sonra tekrar deneyin.`, "warning");
+            };
+
+            tick();
+            led.rateLimitTimerId = window.setInterval(tick, 1000);
         }
 
-        async function veriCek() {
+        function getFieldPayload(changedLed, nextState) {
+            const params = new URLSearchParams({ api_key: CONFIG.writeApiKey });
+            ledData.forEach((led) => {
+                params.set(`field${led.id}`, led.id === changedLed.id ? nextState : led.state);
+            });
+            return params;
+        }
+
+        async function sendState(led, nextState) {
+            const response = await fetch("https://api.thingspeak.com/update", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: getFieldPayload(led, nextState)
+            });
+
+            if (!response.ok) {
+                throw new Error(`ThingSpeak isteği başarısız: ${response.status}`);
+            }
+
+            const entryId = Number(await response.text());
+            if (!entryId) {
+                throw new Error("ThingSpeak güncellemeyi kabul etmedi.");
+            }
+        }
+
+        async function applyStateChange(led, nextState, automatic = false) {
+            if (led.processing) return false;
+
+            led.processing = true;
+            led.elements.button.disabled = true;
+            setFeedback(led, automatic ? "Süre doldu, durum güncelleniyor..." : "Gönderiliyor...", "warning");
+
             try {
-                const response = await fetch(
-                    `https://api.thingspeak.com/channels/${channelId}/feeds/last.json?api_key=${readApiKey}`
-                );
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    for (let i = 1; i <= 3; i++) {
-                        const durum = String(data[`field${i}`] || "0").trim();
-                        ledStates[i] = durum;
-                        
-                        const statusClass = getLedClass(durum);
-                        const label = getLedLabel(durum);
-                        
-                        document.getElementById(`led${i}-btn`).innerText = durum;
-                        document.getElementById(`led${i}-btn`).className = `led-button ${statusClass}`;
-                        document.getElementById(`led${i}-label`).innerText = label;
-                        
-                        const tarih = new Date(data.created_at).toLocaleString("tr-TR");
-                        document.getElementById(`led${i}-time`).innerText = tarih;
+                await sendState(led, nextState);
+                led.state = String(nextState);
+                led.lastRequestAt = Date.now();
+                renderLed(led, new Date().toISOString());
+                setFeedback(led, "Güncelleme başarılı.", "success");
+                window.setTimeout(() => setFeedback(led), 1600);
+                return true;
+            } catch (error) {
+                console.error(error);
+                setFeedback(led, "Güncelleme başarısız. Bağlantıyı kontrol edin.", "error");
+                return false;
+            } finally {
+                led.processing = false;
+                led.elements.button.disabled = false;
+            }
+        }
+
+        async function toggleLed(ledId) {
+            const led = ledData[ledId - 1];
+            if (!led || led.processing) return;
+
+            const elapsed = Date.now() - led.lastRequestAt;
+            if (elapsed < CONFIG.rateLimitMs) {
+                showRateLimit(led, CONFIG.rateLimitMs - elapsed);
+                return;
+            }
+
+            const durationSeconds = getDurationSeconds(led);
+            stopTimer(led);
+            
+            const nextState = isOn(led.state) ? "1" : "0";
+            const success = await applyStateChange(led, nextState);
+
+            if (success && durationSeconds > 0) {
+                startTimer(led, durationSeconds);
+            }
+        }
+
+        async function fetchLatestData() {
+            refreshStatus.textContent = "Veriler güncelleniyor...";
+            statusDot.classList.remove("error");
+
+            try {
+                const url = `https://api.thingspeak.com/channels/${CONFIG.channelId}/feeds/last.json?api_key=${CONFIG.readApiKey}`;
+                const response = await fetch(url, { cache: "no-store" });
+
+                if (!response.ok) {
+                    throw new Error(`Veri isteği başarısız: ${response.status}`);
+                }
+
+                const data = await response.json();
+                ledData.forEach((led) => {
+                    const remoteState = data[`field${led.id}`];
+                    if (remoteState !== null && remoteState !== undefined) {
+                        led.state = String(remoteState).trim();
                     }
-                }
-            } catch (error) {
-                console.error('Hata:', error);
-            }
-            
-            document.getElementById("refresh-status").innerText = "Güncellendi: " + new Date().toLocaleTimeString("tr-TR");
-        }
-
-        async function applyStateChange(fieldNum, newState) {
-            let field1 = ledStates[1];
-            let field2 = ledStates[2];
-            let field3 = ledStates[3];
-            
-            if (fieldNum === 1) field1 = newState;
-            if (fieldNum === 2) field2 = newState;
-            if (fieldNum === 3) field3 = newState;
-            
-            try {
-                const response = await fetch('https://api.thingspeak.com/update', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `api_key=${writeApiKey}&field1=${field1}&field2=${field2}&field3=${field3}`
+                    renderLed(led, data.created_at);
                 });
-                
-                const result = await response.text();
-                console.log('Otomatik değişiklik yapıldı:', result);
-                
-                if (result > 0) {
-                    setTimeout(() => {
-                        veriCek();
-                    }, 1000);
-                }
+
+                refreshStatus.textContent = `Son kontrol: ${new Date().toLocaleTimeString("tr-TR")}`;
             } catch (error) {
-                console.error('Otomatik değişiklik hatası:', error);
+                console.error(error);
+                statusDot.classList.add("error");
+                refreshStatus.textContent = "Veriler alınamadı. Bağlantıyı kontrol edin.";
             }
         }
 
-        async function toggleLed(fieldNum) {
-            if (isProcessing[fieldNum]) {
-                return;
-            }
-            
-            const now = Date.now();
-            const timeSinceLastRequest = now - lastRequestTime[fieldNum];
-            
-            if (timeSinceLastRequest < RATE_LIMIT) {
-                showCountdown(fieldNum);
-                return;
-            }
-            
-            const btn = document.getElementById(`led${fieldNum}-btn`);
-            const loading = document.getElementById(`led${fieldNum}-loading`);
-            const warningEl = document.getElementById(`led${fieldNum}-warning`);
-            const countdownEl = document.getElementById(`led${fieldNum}-countdown`);
-            const timeInput = document.getElementById(`led${fieldNum}-time-input`);
-            
-            warningEl.classList.remove("show");
-            countdownEl.classList.remove("show");
-            
-            const newState = ledStates[fieldNum] == 0 || ledStates[fieldNum] == "0" ? 1 : 0;
-            
-            let field1 = ledStates[1];
-            let field2 = ledStates[2];
-            let field3 = ledStates[3];
-            
-            if (fieldNum === 1) field1 = newState;
-            if (fieldNum === 2) field2 = newState;
-            if (fieldNum === 3) field3 = newState;
-            
-            loading.innerText = "Gönderiliyor...";
-            btn.disabled = true;
-            isProcessing[fieldNum] = true;
-            
-            try {
-                const response = await fetch('https://api.thingspeak.com/update', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `api_key=${writeApiKey}&field1=${field1}&field2=${field2}&field3=${field3}`
-                });
-                
-                const result = await response.text();
-                
-                if (result > 0) {
-                    loading.innerText = "✓ Başarılı";
-                    lastRequestTime[fieldNum] = Date.now();
-                    
-                    // ✅ Timer başlat
-                    const seconds = parseInt(timeInput.value) || 1800;
-                    startTimer(fieldNum, seconds);
-                    
-                    setTimeout(() => {
-                        veriCek();
-                        loading.innerText = "";
-                        btn.disabled = false;
-                        isProcessing[fieldNum] = false;
-                    }, 2000);
-                } else {
-                    loading.innerText = "✗ Hata!";
-                    setTimeout(() => {
-                        loading.innerText = "";
-                        btn.disabled = false;
-                        isProcessing[fieldNum] = false;
-                    }, 1500);
-                }
-            } catch (error) {
-                console.error('Hata:', error);
-                loading.innerText = "✗ Hata!";
-                setTimeout(() => {
-                    loading.innerText = "";
-                    btn.disabled = false;
-                    isProcessing[fieldNum] = false;
-                }, 1500);
-            }
-        }
-
-        veriCek();
-        setInterval(veriCek, 30000);
+        createLedCards();
+        fetchLatestData();
+        window.setInterval(fetchLatestData, CONFIG.refreshIntervalMs);
     </script>
 </body>
 </html>
