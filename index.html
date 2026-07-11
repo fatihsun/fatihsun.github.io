@@ -4,52 +4,149 @@
     <meta charset="UTF-8">
     <title>ThingSpeak LED Durumu</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }
-        .container { display: flex; gap: 20px; flex-wrap: wrap; }
-        .led-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 250px; }
-        .led-card h3 { margin-top: 0; color: #333; }
-        .led-status { 
-            font-size: 36px; 
-            font-weight: bold; 
-            margin: 20px 0; 
-            padding: 20px; 
-            border-radius: 8px;
-            text-align: center;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-        .led-on { background: #4CAF50; color: white; }
-        .led-off { background: #f44336; color: white; }
-        .time { font-size: 12px; color: #777; margin-top: 10px; }
-        .refresh { font-size: 12px; color: #999; margin-top: 10px; }
+        
+        .container { 
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 32px;
+        }
+        
+        .led-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .led-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .led-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .led-card h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .led-indicator {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .led-on {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            box-shadow: 0 0 30px rgba(76, 175, 80, 0.6);
+        }
+        
+        .led-off {
+            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+            box-shadow: 0 0 30px rgba(244, 67, 54, 0.6);
+        }
+        
+        .led-time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid #e9ecef;
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: blink 2s infinite;
+            margin-right: 5px;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
 
-    <h1>LED Kontrol Durumu</h1>
-    
     <div class="container">
-        <!-- LED 1 -->
-        <div class="led-card">
-            <h3>LED 1</h3>
-            <div id="led1-status" class="led-status led-off">-</div>
-            <div id="led1-time" class="time">-</div>
+        <h1>🔌 LED Kontrol Durumu</h1>
+        
+        <div class="led-grid">
+            <!-- LED 1 -->
+            <div class="led-card">
+                <h3>LED 1</h3>
+                <div id="led1-status" class="led-indicator led-off">-</div>
+                <div id="led1-time" class="led-time">-</div>
+            </div>
+
+            <!-- LED 2 -->
+            <div class="led-card">
+                <h3>LED 2</h3>
+                <div id="led2-status" class="led-indicator led-off">-</div>
+                <div id="led2-time" class="led-time">-</div>
+            </div>
+
+            <!-- LED 3 -->
+            <div class="led-card">
+                <h3>LED 3</h3>
+                <div id="led3-status" class="led-indicator led-off">-</div>
+                <div id="led3-time" class="led-time">-</div>
+            </div>
         </div>
 
-        <!-- LED 2 -->
-        <div class="led-card">
-            <h3>LED 2</h3>
-            <div id="led2-status" class="led-status led-off">-</div>
-            <div id="led2-time" class="time">-</div>
-        </div>
-
-        <!-- LED 3 -->
-        <div class="led-card">
-            <h3>LED 3</h3>
-            <div id="led3-status" class="led-status led-off">-</div>
-            <div id="led3-time" class="time">-</div>
+        <div class="footer">
+            <span class="status-indicator"></span>
+            <span id="refresh-status">Yükleniyor...</span>
         </div>
     </div>
-
-    <div id="refresh-status" class="refresh" style="margin-top: 30px;">Yükleniyor...</div>
 
     <script>
         const channelId = "3047398"; 
@@ -62,8 +159,7 @@
         ];
 
         function getLedStatus(value) {
-            // 1 veya "1" = Açık, 0 veya "0" = Kapalı
-            return (value == 1 || value == "1") ? "Açık" : "Kapalı";
+            return (value == 1 || value == "1") ? "✓" : "✗";
         }
 
         function getLedClass(value) {
@@ -88,24 +184,21 @@
                                 const statusClass = getLedClass(durum);
                                 
                                 document.getElementById(`${field.id}-status`).innerText = statusText;
-                                document.getElementById(`${field.id}-status`).className = `led-status ${statusClass}`;
+                                document.getElementById(`${field.id}-status`).className = `led-indicator ${statusClass}`;
                                 
                                 const tarih = new Date(zaman).toLocaleString("tr-TR");
-                                document.getElementById(`${field.id}-time`).innerText = "Son Güncelleme: " + tarih;
+                                document.getElementById(`${field.id}-time`).innerText = tarih;
                             }
                         }
                     })
-                    .catch(error => {
-                        console.error(`LED ${field.num} hatası:`, error);
-                        document.getElementById(`${field.id}-status`).innerText = "?";
-                    });
+                    .catch(error => console.error(`LED ${field.num} hatası:`, error));
             });
             
-            document.getElementById("refresh-status").innerText = "✓ Güncellendi: " + new Date().toLocaleTimeString("tr-TR");
+            document.getElementById("refresh-status").innerText = "Güncellendi: " + new Date().toLocaleTimeString("tr-TR");
         }
 
         veriCek();
-        setInterval(veriCek, 15000); // Her 15 saniyede güncelle
+        setInterval(veriCek, 15000);
     </script>
 
 </body>
