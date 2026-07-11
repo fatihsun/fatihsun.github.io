@@ -5,22 +5,50 @@
     <title>ThingSpeak Veri Çekme</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }
-        .data-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; }
+        .data-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 300px; }
         h3 { margin-top: 0; color: #333; }
         .value { font-size: 32px; font-weight: bold; color: #0275d8; margin: 20px 0; }
         .time { font-size: 13px; color: #777; }
+        .refresh { font-size: 12px; color: #999; margin-top: 15px; }
     </style>
 </head>
 <body>
 
     <div class="data-card">
-        <h3>Sıcaklık Değeri (Field 1)</h3>
-        
-        <!-- ThingSpeak'in resmi embed widget'ı - CORS sorunu yok! -->
-        <iframe width="450" height="260" style="border: 1px solid #cccccc;" 
-            src="https://thingspeak.com/channels/3047398/charts/1?api_key=0YNSMCTFZF3IICX2&bgcolor=%23ffffff&color=%230275d8&dynamic=true&title=Sıcaklık&type=spline">
-        </iframe>
+        <h3>Sıcaklık Değeri (Son)</h3>
+        <div id="veri-kutusu" class="value">-</div>
+        <div id="zaman-kutusu" class="time">-</div>
+        <div class="refresh" id="refresh-kutusu">Yükleniyor...</div>
     </div>
+
+    <script>
+        const channelId = "3047398"; 
+        const readApiKey = "0YNSMCTFZF3IICX2";
+        
+        // ThingSpeak API'nin JSON-P (JSONP) özelliği - CORS sorunu yok!
+        function veriCek() {
+            const script = document.createElement('script');
+            script.src = `https://api.thingspeak.com/channels/${channelId}/fields/1/last.json?api_key=${readApiKey}&callback=goruntuleVeri`;
+            document.head.appendChild(script);
+            document.head.removeChild(script);
+        }
+
+        // JSONP callback fonksiyonu
+        window.goruntuleVeri = function(data) {
+            if (data && data.field1) {
+                document.getElementById("veri-kutusu").innerText = data.field1 + " °C";
+                const tarih = new Date(data.created_at).toLocaleString("tr-TR");
+                document.getElementById("zaman-kutusu").innerText = "Son Güncelleme: " + tarih;
+                document.getElementById("refresh-kutusu").innerText = "✓ Başarılı - " + new Date().toLocaleTimeString("tr-TR");
+            } else {
+                document.getElementById("veri-kutusu").innerText = "Veri yok";
+                document.getElementById("refresh-kutusu").innerText = "✗ Veri alınamadı";
+            }
+        };
+
+        veriCek();
+        setInterval(veriCek, 15000);
+    </script>
 
 </body>
 </html>
