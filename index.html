@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-                <!-- LED 1,2,3 OK -->
     <meta charset="UTF-8">
     <title>ThingSpeak LED Kontrolü</title>
     <style>
@@ -61,34 +60,54 @@
         }
         
         .led-button {
-            width: 100px;
-            height: 100px;
-            border-radius: 12px;
+            width: 120px;
+            height: 120px;
+            border-radius: 16px;
             border: none;
             margin: 0 auto 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
+            font-size: 56px;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             color: white;
             font-weight: bold;
+            position: relative;
+            overflow: hidden;
         }
         
+        /* LED AÇIK (0 = Açık/Yanıyor) */
         .led-on {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            box-shadow: 0 0 30px rgba(76, 175, 80, 0.6);
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
         }
         
+        .led-on::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.3), transparent);
+            animation: pulse 2s infinite;
+        }
+        
+        /* LED KAPAL (1 = Kapalı/Söndü) */
         .led-off {
-            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
-            box-shadow: 0 0 30px rgba(244, 67, 54, 0.6);
+            background: linear-gradient(135deg, #666666 0%, #333333 100%);
+            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
         }
         
         .led-button:hover:not(:disabled) {
-            transform: scale(1.05);
+            transform: scale(1.08);
         }
         
         .led-button:active:not(:disabled) {
@@ -98,6 +117,13 @@
         .led-button:disabled {
             opacity: 0.7;
             cursor: not-allowed;
+        }
+        
+        .led-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
         }
         
         .led-time {
@@ -147,7 +173,8 @@
             <!-- LED 1 -->
             <div class="led-card">
                 <h3>LED 1</h3>
-                <button class="led-button led-off" id="led1-btn" onclick="toggleLed(1)">-</button>
+                <div class="led-label" id="led1-label">-</div>
+                <button class="led-button led-off" id="led1-btn" onclick="toggleLed(1)"></button>
                 <div id="led1-time" class="led-time">-</div>
                 <div id="led1-loading" class="led-loading"></div>
             </div>
@@ -155,7 +182,8 @@
             <!-- LED 2 -->
             <div class="led-card">
                 <h3>LED 2</h3>
-                <button class="led-button led-off" id="led2-btn" onclick="toggleLed(2)">-</button>
+                <div class="led-label" id="led2-label">-</div>
+                <button class="led-button led-off" id="led2-btn" onclick="toggleLed(2)"></button>
                 <div id="led2-time" class="led-time">-</div>
                 <div id="led2-loading" class="led-loading"></div>
             </div>
@@ -163,7 +191,8 @@
             <!-- LED 3 -->
             <div class="led-card">
                 <h3>LED 3</h3>
-                <button class="led-button led-off" id="led3-btn" onclick="toggleLed(3)">-</button>
+                <div class="led-label" id="led3-label">-</div>
+                <button class="led-button led-off" id="led3-btn" onclick="toggleLed(3)"></button>
                 <div id="led3-time" class="led-time">-</div>
                 <div id="led3-loading" class="led-loading"></div>
             </div>
@@ -189,7 +218,13 @@
         let ledStates = { 1: 0, 2: 0, 3: 0 };
 
         function getLedClass(value) {
-            return (value == 1 || value == "1") ? "led-on" : "led-off";
+            // ✅ TERS: 0 = Açık (Sarı), 1 = Kapalı (Gri)
+            return (value == 0 || value == "0") ? "led-on" : "led-off";
+        }
+
+        function getLedLabel(value) {
+            // ✅ TERS: 0 = Açık, 1 = Kapalı
+            return (value == 0 || value == "0") ? "💡 AÇIK" : "⚫ KAPAL";
         }
 
         // Tüm LED'lerin son durumunu bir çağrıda oku
@@ -208,8 +243,10 @@
                         ledStates[i] = durum;
                         
                         const statusClass = getLedClass(durum);
-                        document.getElementById(`led${i}-btn`).innerText = durum;
+                        const label = getLedLabel(durum);
+                        
                         document.getElementById(`led${i}-btn`).className = `led-button ${statusClass}`;
+                        document.getElementById(`led${i}-label`).innerText = label;
                         
                         const tarih = new Date(data.created_at).toLocaleString("tr-TR");
                         document.getElementById(`led${i}-time`).innerText = tarih;
@@ -222,15 +259,15 @@
             document.getElementById("refresh-status").innerText = "Güncellendi: " + new Date().toLocaleTimeString("tr-TR");
         }
 
-        // LED'i aç/kapat (✅ TÜM DEĞERLERİ GÖNDER)
+        // LED'i aç/kapat
         async function toggleLed(fieldNum) {
             const btn = document.getElementById(`led${fieldNum}-btn`);
             const loading = document.getElementById(`led${fieldNum}-loading`);
             
-            // Yeni durum (ters çevir)
-            const newState = ledStates[fieldNum] == 1 || ledStates[fieldNum] == "1" ? 0 : 1;
+            // ✅ TERS: Durumu ters çevir
+            const newState = ledStates[fieldNum] == 0 || ledStates[fieldNum] == "0" ? 1 : 0;
             
-            // ✅ Mevcut durumları kopyala
+            // Mevcut durumları kopyala
             let field1 = ledStates[1];
             let field2 = ledStates[2];
             let field3 = ledStates[3];
@@ -244,7 +281,6 @@
             btn.disabled = true;
             
             try {
-                // ✅ TÜM FIELD'LERİ GÖNDER
                 const response = await fetch('https://api.thingspeak.com/update', {
                     method: 'POST',
                     headers: {
