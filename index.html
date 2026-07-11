@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ThingSpeak LED Kontrolü2</title>
+    <title>ThingSpeak LED Kontrolü3 CORS</title>
     <style>
         * {
             margin: 0;
@@ -220,6 +220,7 @@
         const readApiKey = "0YNSMCTFZF3IICX2";
         const writeApiKey = "V2IY1U93VOH2AKCB";
         const RATE_LIMIT = 15000;
+        const CORS_PROXY = "https://api.allorigins.win/raw?url="; // ✅ CORS proxy
         
         let ledStates = { 1: 0, 2: 0, 3: 0 };
         let lastRequestTime = { 1: 0, 2: 0, 3: 0 };
@@ -263,42 +264,32 @@
             }, 1000);
         }
 
-        // ✅ Verileri farklı endpoint'ten çek
+        // ✅ CORS proxy ile verileri çek
         async function veriCek() {
             try {
-                // ✅ CSV formatında çek (daha güvenilir)
-                const response = await fetch(
-                    `https://thingspeak.com/channels/${channelId}/feeds/last.csv?api_key=${readApiKey}`
-                );
+                const url = `https://api.thingspeak.com/channels/${channelId}/feeds/last.json?api_key=${readApiKey}`;
+                const corsUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+                
+                const response = await fetch(corsUrl);
                 
                 if (response.ok) {
-                    const text = await response.text();
-                    const lines = text.trim().split('\n');
+                    const data = await response.json();
                     
-                    if (lines.length > 1) {
-                        // Format: created_at,field1,field2,field3,...
-                        const values = lines[1].split(',');
+                    ledStates[1] = String(data.field1 || "0").trim();
+                    ledStates[2] = String(data.field2 || "0").trim();
+                    ledStates[3] = String(data.field3 || "0").trim();
+                    
+                    console.log("LED States:", ledStates);
+                    
+                    for (let i = 1; i <= 3; i++) {
+                        const durum = ledStates[i];
+                        const statusClass = getLedClass(durum);
+                        const label = getLedLabel(durum);
                         
-                        if (values.length > 1) {
-                            const created = values[0];
-                            ledStates[1] = values[1] ? String(values[1]).trim() : "0";
-                            ledStates[2] = values[2] ? String(values[2]).trim() : "0";
-                            ledStates[3] = values[3] ? String(values[3]).trim() : "0";
-                            
-                            console.log("LED States:", ledStates);
-                            
-                            // Tüm LED'leri güncelle
-                            for (let i = 1; i <= 3; i++) {
-                                const durum = ledStates[i];
-                                const statusClass = getLedClass(durum);
-                                const label = getLedLabel(durum);
-                                
-                                document.getElementById(`led${i}-btn`).innerText = durum;
-                                document.getElementById(`led${i}-btn`).className = `led-button ${statusClass}`;
-                                document.getElementById(`led${i}-label`).innerText = label;
-                                document.getElementById(`led${i}-time`).innerText = created;
-                            }
-                        }
+                        document.getElementById(`led${i}-btn`).innerText = durum;
+                        document.getElementById(`led${i}-btn`).className = `led-button ${statusClass}`;
+                        document.getElementById(`led${i}-label`).innerText = label;
+                        document.getElementById(`led${i}-time`).innerText = data.created_at || "-";
                     }
                 }
             } catch (error) {
@@ -387,7 +378,4 @@
         }
 
         veriCek();
-        setInterval(veriCek, 15000); // ✅ 15 saniyede bir güncelle
-    </script>
-</body>
-</html>
+        set
