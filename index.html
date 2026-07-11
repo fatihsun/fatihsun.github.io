@@ -25,7 +25,7 @@
         const readApiKey = "0YNSMCTFZF3IICX2"; // Kanalınız gizli (private) ise gereklidir
         
         // ThingSpeak son veriyi getiren API URL'si
-        const url = `https://thingspeak.com{channelId}/fields/1/last.json?api_key=${readApiKey}`;
+        const url = `https://thingspeak.com/channels/${channelId}/fields/1/last.json?api_key=${readApiKey}`;
 
         function veriCek() {
             fetch(url)
@@ -62,5 +62,3 @@
 
 </body>
 </html>
-
-<!-- Yorum satırı programcı görebilir izleyenler göremez -->
