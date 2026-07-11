@@ -9,7 +9,7 @@
         h3 { margin-top: 0; color: #333; }
         .value { font-size: 24px; font-weight: bold; color: #0275d8; }
         .time { font-size: 12px; color: #777; margin-top: 10px; }
-        .debug { font-size: 12px; color: #d32f2f; margin-top: 10px; }
+        .status { font-size: 12px; color: #28a745; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -18,63 +18,52 @@
         <h3>Sıcaklık Değeri (Field 1)</h3>
         <div id="veri-kutusu" class="value">Yükleniyor...</div>
         <div id="zaman-kutusu" class="time"></div>
-        <div id="debug-kutusu" class="debug"></div>
+        <div id="status-kutusu" class="status"></div>
     </div>
 
     <script>
         const channelId = "3047398"; 
         const readApiKey = "0YNSMCTFZF3IICX2";
         
-        // CORS sorunu yok, önceden kaydedilmiş verileri döndürür
-        const url = `https://thingspeak.com/channels/${channelId}/fields/1/last.json?api_key=${readApiKey}`;
+        // CSV formatında veri çek (CORS sorunu yok!)
+        const url = `https://thingspeak.com/channels/${channelId}/fields/1.csv?api_key=${readApiKey}&results=1`;
 
         function veriCek() {
-            fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            })
+            fetch(url)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP Hatası: ${response.status}`);
                     }
-                    return response.json();
+                    return response.text();
                 })
                 .then(data => {
-                    if(data.field1 !== null && data.field1 !== undefined) {
-                        document.getElementById("veri-kutusu").innerText = data.field1 + " °C";
-                        const tarih = new Date(data.created_at).toLocaleString("tr-TR");
-                        document.getElementById("zaman-kutusu").innerText = "Son Güncelleme: " + tarih;
-                        document.getElementById("debug-kutusu").innerText = "";
-                    } else {
-                        document.getElementById("veri-kutusu").innerText = "Veri yok";
+                    // CSV verisi: 
+                    // "created_at","field1"
+                    // "2024-01-15 10:30:45","25.5"
+                    
+                    const satırlar = data.trim().split('\n');
+                    if (satırlar.length > 1) {
+                        // İkinci satırı oku (başlık hariç)
+                        const değerler = satırlar[1].split(',');
+                        const zaman = değerler[0].replace(/"/g, '');
+                        const sıcaklık = değerler[1].replace(/"/g, '');
+                        
+                        if (sıcaklık && sıcaklık !== "null") {
+                            document.getElementById("veri-kutusu").innerText = sıcaklık + " °C";
+                            
+                            const tarih = new Date(zaman).toLocaleString("tr-TR");
+                            document.getElementById("zaman-kutusu").innerText = "Son Güncelleme: " + tarih;
+                            document.getElementById("status-kutusu").innerText = "✓ Bağlantı başarılı";
+                        } else {
+                            document.getElementById("veri-kutusu").innerText = "Veri yok";
+                        }
                     }
                 })
                 .catch(error => {
                     console.error("Hata:", error);
                     document.getElementById("veri-kutusu").innerText = "Hata!";
-                    document.getElementById("debug-kutusu").innerText = "CORS Sorunu - Proxy kullanılıyor...";
-                    
-                    // CORS sorunu varsa alternatif yol
-                    veriCekProxy();
+                    document.getElementById("status-kutusu").innerText = "✗ Bağlantı başarısız";
                 });
-        }
-
-        function veriCekProxy() {
-            // CORS proxy kullanarak
-            const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
-            
-            fetch(proxyUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if(data.field1 !== null) {
-                        document.getElementById("veri-kutusu").innerText = data.field1 + " °C";
-                        const tarih = new Date(data.created_at).toLocaleString("tr-TR");
-                        document.getElementById("zaman-kutusu").innerText = "Son Güncelleme: " + tarih;
-                    }
-                })
-                .catch(error => console.error("Proxy Hatası:", error));
         }
 
         veriCek();
