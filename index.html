@@ -2,52 +2,110 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>ThingSpeak Veri Çekme</title>
+    <title>ThingSpeak LED Durumu</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }
-        .data-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 300px; }
-        h3 { margin-top: 0; color: #333; }
-        .value { font-size: 32px; font-weight: bold; color: #0275d8; margin: 20px 0; }
-        .time { font-size: 13px; color: #777; }
-        .refresh { font-size: 12px; color: #999; margin-top: 15px; }
+        .container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .led-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 250px; }
+        .led-card h3 { margin-top: 0; color: #333; }
+        .led-status { 
+            font-size: 36px; 
+            font-weight: bold; 
+            margin: 20px 0; 
+            padding: 20px; 
+            border-radius: 8px;
+            text-align: center;
+        }
+        .led-on { background: #4CAF50; color: white; }
+        .led-off { background: #f44336; color: white; }
+        .time { font-size: 12px; color: #777; margin-top: 10px; }
+        .refresh { font-size: 12px; color: #999; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="data-card">
-        <h3>Sıcaklık Değeri (Son)</h3>
-        <div id="veri-kutusu" class="value">-</div>
-        <div id="zaman-kutusu" class="time">-</div>
-        <div class="refresh" id="refresh-kutusu">Yükleniyor...</div>
+    <h1>LED Kontrol Durumu</h1>
+    
+    <div class="container">
+        <!-- LED 1 -->
+        <div class="led-card">
+            <h3>LED 1</h3>
+            <div id="led1-status" class="led-status led-off">-</div>
+            <div id="led1-time" class="time">-</div>
+        </div>
+
+        <!-- LED 2 -->
+        <div class="led-card">
+            <h3>LED 2</h3>
+            <div id="led2-status" class="led-status led-off">-</div>
+            <div id="led2-time" class="time">-</div>
+        </div>
+
+        <!-- LED 3 -->
+        <div class="led-card">
+            <h3>LED 3</h3>
+            <div id="led3-status" class="led-status led-off">-</div>
+            <div id="led3-time" class="time">-</div>
+        </div>
     </div>
+
+    <div id="refresh-status" class="refresh" style="margin-top: 30px;">Yükleniyor...</div>
 
     <script>
         const channelId = "3047398"; 
         const readApiKey = "0YNSMCTFZF3IICX2";
         
-        // ThingSpeak API'nin JSON-P (JSONP) özelliği - CORS sorunu yok!
-        function veriCek() {
-            const script = document.createElement('script');
-            script.src = `https://api.thingspeak.com/channels/${channelId}/fields/1/last.json?api_key=${readApiKey}&callback=goruntuleVeri`;
-            document.head.appendChild(script);
-            document.head.removeChild(script);
+        const fields = [
+            { num: 1, id: 'led1' },
+            { num: 2, id: 'led2' },
+            { num: 3, id: 'led3' }
+        ];
+
+        function getLedStatus(value) {
+            // 1 veya "1" = Açık, 0 veya "0" = Kapalı
+            return (value == 1 || value == "1") ? "Açık" : "Kapalı";
         }
 
-        // JSONP callback fonksiyonu
-        window.goruntuleVeri = function(data) {
-            if (data && data.field1) {
-                document.getElementById("veri-kutusu").innerText = data.field1 + " °C";
-                const tarih = new Date(data.created_at).toLocaleString("tr-TR");
-                document.getElementById("zaman-kutusu").innerText = "Son Güncelleme: " + tarih;
-                document.getElementById("refresh-kutusu").innerText = "✓ Başarılı - " + new Date().toLocaleTimeString("tr-TR");
-            } else {
-                document.getElementById("veri-kutusu").innerText = "Veri yok";
-                document.getElementById("refresh-kutusu").innerText = "✗ Veri alınamadı";
-            }
-        };
+        function getLedClass(value) {
+            return (value == 1 || value == "1") ? "led-on" : "led-off";
+        }
+
+        function veriCek() {
+            fields.forEach(field => {
+                const url = `https://thingspeak.com/channels/${channelId}/fields/${field.num}/last.csv?api_key=${readApiKey}`;
+                
+                fetch(url, { mode: 'no-cors' })
+                    .then(response => response.text())
+                    .then(data => {
+                        const satırlar = data.trim().split('\n');
+                        if (satırlar.length > 1) {
+                            const değerler = satırlar[1].split(',');
+                            const zaman = değerler[0].replace(/"/g, '');
+                            const durum = değerler[1].replace(/"/g, '');
+                            
+                            if (durum !== null && durum !== undefined) {
+                                const statusText = getLedStatus(durum);
+                                const statusClass = getLedClass(durum);
+                                
+                                document.getElementById(`${field.id}-status`).innerText = statusText;
+                                document.getElementById(`${field.id}-status`).className = `led-status ${statusClass}`;
+                                
+                                const tarih = new Date(zaman).toLocaleString("tr-TR");
+                                document.getElementById(`${field.id}-time`).innerText = "Son Güncelleme: " + tarih;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`LED ${field.num} hatası:`, error);
+                        document.getElementById(`${field.id}-status`).innerText = "?";
+                    });
+            });
+            
+            document.getElementById("refresh-status").innerText = "✓ Güncellendi: " + new Date().toLocaleTimeString("tr-TR");
+        }
 
         veriCek();
-        setInterval(veriCek, 15000);
+        setInterval(veriCek, 15000); // Her 15 saniyede güncelle
     </script>
 
 </body>
