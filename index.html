@@ -68,7 +68,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 40px;
+            font-size: 48px;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
@@ -177,7 +177,7 @@
     <script>
         const channelId = "3047398"; 
         const readApiKey = "0YNSMCTFZF3IICX2";
-        const writeApiKey = "V2IY1U93VOH2AKCB"; // ✅ Doğru Write API Key
+        const writeApiKey = "V2IY1U93VOH2AKCB";
         
         const fields = [
             { num: 1, id: 'led1' },
@@ -186,10 +186,6 @@
         ];
         
         let ledStates = { 1: 0, 2: 0, 3: 0 };
-
-        function getLedStatus(value) {
-            return (value == 1 || value == "1") ? "✓" : "✗";
-        }
 
         function getLedClass(value) {
             return (value == 1 || value == "1") ? "led-on" : "led-off";
@@ -212,10 +208,10 @@
                             if (durum !== null && durum !== undefined) {
                                 ledStates[field.num] = durum;
                                 
-                                const statusText = getLedStatus(durum);
                                 const statusClass = getLedClass(durum);
                                 
-                                document.getElementById(`${field.id}-btn`).innerText = statusText;
+                                // ✅ Butonda 0 veya 1 göster
+                                document.getElementById(`${field.id}-btn`).innerText = durum;
                                 document.getElementById(`${field.id}-btn`).className = `led-button ${statusClass}`;
                                 
                                 const tarih = new Date(zaman).toLocaleString("tr-TR");
