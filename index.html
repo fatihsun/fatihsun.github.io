@@ -5,70 +5,22 @@
     <title>ThingSpeak Veri Çekme</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }
-        .data-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 300px; }
+        .data-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; }
         h3 { margin-top: 0; color: #333; }
-        .value { font-size: 24px; font-weight: bold; color: #0275d8; }
-        .time { font-size: 12px; color: #777; margin-top: 10px; }
-        .status { font-size: 12px; color: #28a745; margin-top: 10px; }
+        .value { font-size: 32px; font-weight: bold; color: #0275d8; margin: 20px 0; }
+        .time { font-size: 13px; color: #777; }
     </style>
 </head>
 <body>
 
     <div class="data-card">
         <h3>Sıcaklık Değeri (Field 1)</h3>
-        <div id="veri-kutusu" class="value">Yükleniyor...</div>
-        <div id="zaman-kutusu" class="time"></div>
-        <div id="status-kutusu" class="status"></div>
-    </div>
-
-    <script>
-        const channelId = "3047398"; 
-        const readApiKey = "0YNSMCTFZF3IICX2";
         
-        // CSV formatında veri çek (CORS sorunu yok!)
-        const url = `https://thingspeak.com/channels/${channelId}/fields/1.csv?api_key=${readApiKey}&results=1`;
-
-        function veriCek() {
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP Hatası: ${response.status}`);
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    // CSV verisi: 
-                    // "created_at","field1"
-                    // "2024-01-15 10:30:45","25.5"
-                    
-                    const satırlar = data.trim().split('\n');
-                    if (satırlar.length > 1) {
-                        // İkinci satırı oku (başlık hariç)
-                        const değerler = satırlar[1].split(',');
-                        const zaman = değerler[0].replace(/"/g, '');
-                        const sıcaklık = değerler[1].replace(/"/g, '');
-                        
-                        if (sıcaklık && sıcaklık !== "null") {
-                            document.getElementById("veri-kutusu").innerText = sıcaklık + " °C";
-                            
-                            const tarih = new Date(zaman).toLocaleString("tr-TR");
-                            document.getElementById("zaman-kutusu").innerText = "Son Güncelleme: " + tarih;
-                            document.getElementById("status-kutusu").innerText = "✓ Bağlantı başarılı";
-                        } else {
-                            document.getElementById("veri-kutusu").innerText = "Veri yok";
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error("Hata:", error);
-                    document.getElementById("veri-kutusu").innerText = "Hata!";
-                    document.getElementById("status-kutusu").innerText = "✗ Bağlantı başarısız";
-                });
-        }
-
-        veriCek();
-        setInterval(veriCek, 15000);
-    </script>
+        <!-- ThingSpeak'in resmi embed widget'ı - CORS sorunu yok! -->
+        <iframe width="450" height="260" style="border: 1px solid #cccccc;" 
+            src="https://thingspeak.com/channels/3047398/charts/1?api_key=0YNSMCTFZF3IICX2&bgcolor=%23ffffff&color=%230275d8&dynamic=true&title=Sıcaklık&type=spline">
+        </iframe>
+    </div>
 
 </body>
 </html>
