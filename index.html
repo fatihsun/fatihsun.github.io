@@ -9,6 +9,7 @@
         h3 { margin-top: 0; color: #333; }
         .value { font-size: 24px; font-weight: bold; color: #0275d8; }
         .time { font-size: 12px; color: #777; margin-top: 10px; }
+        .debug { font-size: 12px; color: #d32f2f; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -17,32 +18,35 @@
         <h3>Sıcaklık Değeri (Field 1)</h3>
         <div id="veri-kutusu" class="value">Yükleniyor...</div>
         <div id="zaman-kutusu" class="time"></div>
+        <div id="debug-kutusu" class="debug"></div>
     </div>
 
     <script>
-        // Kendi bilgilerinize göre doldurun
         const channelId = "3047398"; 
-        const readApiKey = "0YNSMCTFZF3IICX2"; // Kanalınız gizli (private) ise gereklidir
+        const readApiKey = "0YNSMCTFZF3IICX2";
         
-        // ThingSpeak son veriyi getiren API URL'si
+        // CORS sorunu yok, önceden kaydedilmiş verileri döndürür
         const url = `https://thingspeak.com/channels/${channelId}/fields/1/last.json?api_key=${readApiKey}`;
 
         function veriCek() {
-            fetch(url)
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error("Ağ hatası oluştu.");
+                        throw new Error(`HTTP Hatası: ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
-                    // Gelen JSON verisini ayrıştırıp HTML içerisine yazıyoruz
-                    if(data.field1 !== null) {
+                    if(data.field1 !== null && data.field1 !== undefined) {
                         document.getElementById("veri-kutusu").innerText = data.field1 + " °C";
-                        
-                        // Zaman damgasını yerel saate çevirme
                         const tarih = new Date(data.created_at).toLocaleString("tr-TR");
                         document.getElementById("zaman-kutusu").innerText = "Son Güncelleme: " + tarih;
+                        document.getElementById("debug-kutusu").innerText = "";
                     } else {
                         document.getElementById("veri-kutusu").innerText = "Veri yok";
                     }
@@ -50,13 +54,30 @@
                 .catch(error => {
                     console.error("Hata:", error);
                     document.getElementById("veri-kutusu").innerText = "Hata!";
+                    document.getElementById("debug-kutusu").innerText = "CORS Sorunu - Proxy kullanılıyor...";
+                    
+                    // CORS sorunu varsa alternatif yol
+                    veriCekProxy();
                 });
         }
 
-        // Sayfa açıldığında ilk veriyi çek
-        veriCek();
+        function veriCekProxy() {
+            // CORS proxy kullanarak
+            const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+            
+            fetch(proxyUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if(data.field1 !== null) {
+                        document.getElementById("veri-kutusu").innerText = data.field1 + " °C";
+                        const tarih = new Date(data.created_at).toLocaleString("tr-TR");
+                        document.getElementById("zaman-kutusu").innerText = "Son Güncelleme: " + tarih;
+                    }
+                })
+                .catch(error => console.error("Proxy Hatası:", error));
+        }
 
-        // Her 15 saniyede bir veriyi otomatik güncelle (ThingSpeak ücretsiz hesap sınırı)
+        veriCek();
         setInterval(veriCek, 15000);
     </script>
 
