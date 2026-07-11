@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ThingSpeak LED Kontrolü1</title>
+    <title>ThingSpeak LED Kontrolü2</title>
     <style>
         * {
             margin: 0;
@@ -224,7 +224,7 @@
         let ledStates = { 1: 0, 2: 0, 3: 0 };
         let lastRequestTime = { 1: 0, 2: 0, 3: 0 };
         let countdownInterval = { 1: null, 2: null, 3: null };
-        let isProcessing = { 1: false, 2: false, 3: false }; // ✅ İşlem durumu
+        let isProcessing = { 1: false, 2: false, 3: false };
 
         function getLedClass(value) {
             return (value == 0 || value == "0") ? "led-on" : "led-off";
@@ -263,39 +263,52 @@
             }, 1000);
         }
 
+        // ✅ Verileri farklı endpoint'ten çek
         async function veriCek() {
             try {
+                // ✅ CSV formatında çek (daha güvenilir)
                 const response = await fetch(
-                    `https://api.thingspeak.com/channels/${channelId}/feeds/last.json?api_key=${readApiKey}`
+                    `https://thingspeak.com/channels/${channelId}/feeds/last.csv?api_key=${readApiKey}`
                 );
                 
                 if (response.ok) {
-                    const data = await response.json();
+                    const text = await response.text();
+                    const lines = text.trim().split('\n');
                     
-                    for (let i = 1; i <= 3; i++) {
-                        const durum = String(data[`field${i}`] || "0").trim();
-                        ledStates[i] = durum;
+                    if (lines.length > 1) {
+                        // Format: created_at,field1,field2,field3,...
+                        const values = lines[1].split(',');
                         
-                        const statusClass = getLedClass(durum);
-                        const label = getLedLabel(durum);
-                        
-                        document.getElementById(`led${i}-btn`).innerText = durum;
-                        document.getElementById(`led${i}-btn`).className = `led-button ${statusClass}`;
-                        document.getElementById(`led${i}-label`).innerText = label;
-                        
-                        const tarih = new Date(data.created_at).toLocaleString("tr-TR");
-                        document.getElementById(`led${i}-time`).innerText = tarih;
+                        if (values.length > 1) {
+                            const created = values[0];
+                            ledStates[1] = values[1] ? String(values[1]).trim() : "0";
+                            ledStates[2] = values[2] ? String(values[2]).trim() : "0";
+                            ledStates[3] = values[3] ? String(values[3]).trim() : "0";
+                            
+                            console.log("LED States:", ledStates);
+                            
+                            // Tüm LED'leri güncelle
+                            for (let i = 1; i <= 3; i++) {
+                                const durum = ledStates[i];
+                                const statusClass = getLedClass(durum);
+                                const label = getLedLabel(durum);
+                                
+                                document.getElementById(`led${i}-btn`).innerText = durum;
+                                document.getElementById(`led${i}-btn`).className = `led-button ${statusClass}`;
+                                document.getElementById(`led${i}-label`).innerText = label;
+                                document.getElementById(`led${i}-time`).innerText = created;
+                            }
+                        }
                     }
                 }
             } catch (error) {
-                console.error('Hata:', error);
+                console.error('Veri çekme hatası:', error);
             }
             
             document.getElementById("refresh-status").innerText = "Güncellendi: " + new Date().toLocaleTimeString("tr-TR");
         }
 
         async function toggleLed(fieldNum) {
-            // ✅ İşlem devam ediyor mu kontrol et
             if (isProcessing[fieldNum]) {
                 return;
             }
@@ -323,5 +336,58 @@
             let field3 = ledStates[3];
             
             if (fieldNum === 1) field1 = newState;
-            if (fieldNum === 2) field2 = newState;*
-
+            if (fieldNum === 2) field2 = newState;
+            if (fieldNum === 3) field3 = newState;
+            
+            loading.innerText = "Gönderiliyor...";
+            btn.disabled = true;
+            isProcessing[fieldNum] = true;
+            
+            try {
+                const response = await fetch('https://api.thingspeak.com/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `api_key=${writeApiKey}&field1=${field1}&field2=${field2}&field3=${field3}`
+                });
+                
+                const result = await response.text();
+                console.log('ThingSpeak yanıt:', result);
+                
+                if (result > 0) {
+                    loading.innerText = "✓ Başarılı";
+                    lastRequestTime[fieldNum] = Date.now();
+                    
+                    setTimeout(() => {
+                        veriCek();
+                        loading.innerText = "";
+                        btn.disabled = false;
+                        isProcessing[fieldNum] = false;
+                    }, 2000);
+                } else {
+                    loading.innerText = "✗ Hata! Tekrar deneyin";
+                    
+                    setTimeout(() => {
+                        loading.innerText = "";
+                        btn.disabled = false;
+                        isProcessing[fieldNum] = false;
+                    }, 1500);
+                }
+            } catch (error) {
+                console.error('Hata:', error);
+                loading.innerText = "✗ Hata! Tekrar deneyin";
+                
+                setTimeout(() => {
+                    loading.innerText = "";
+                    btn.disabled = false;
+                    isProcessing[fieldNum] = false;
+                }, 1500);
+            }
+        }
+
+        veriCek();
+        setInterval(veriCek, 15000); // ✅ 15 saniyede bir güncelle
+    </script>
+</body>
+</html>
